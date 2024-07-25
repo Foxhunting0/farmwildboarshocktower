@@ -1,6 +1,7 @@
 import streamlit as st
 import requests
 import os
+import uuid
 
 st.title("🎈 My new app")
 st.write("Let's start building! For help and inspiration, head over to [docs.streamlit.io](https://docs.streamlit.io)")
@@ -10,8 +11,8 @@ uploaded_file = st.file_uploader("동영상 파일을 업로드하세요", type=
 
 if st.button("멧돼지 감지 시작"):
     if uploaded_file is not None:
-        # 임시 파일로 저장
-        video_path = f"./{uploaded_file.name}"
+        # 임시 파일로 저장 (고유한 이름 추가)
+        video_path = f"./{uuid.uuid4()}_{uploaded_file.name}"
         with open(video_path, "wb") as f:
             f.write(uploaded_file.getbuffer())
         
@@ -27,9 +28,12 @@ if st.button("멧돼지 감지 시작"):
             else:
                 st.warning(data.get("message"))
         else:
-            st.error("서버 오류가 발생했습니다.")
+            st.error(f"서버 오류가 발생했습니다. 상태 코드: {response.status_code}")
         
-        # 임시 비디오 파일 삭제
-        os.remove(video_path)
+        # 임시 비디오 파일 삭제 (오류 처리 추가)
+        try:
+            os.remove(video_path)
+        except Exception as e:
+            st.error(f"비디오 파일 삭제 중 오류 발생: {e}")
     else:
         st.error("동영상 파일을 업로드해야 합니다.")
