@@ -16,15 +16,16 @@ if st.button("멧돼지 감지 시작"):
         with open(video_path, "wb") as f:
             f.write(uploaded_file.getbuffer())
         
-        # Flask 서버에 요청 보내기
+        # Flask 서버에 파일 전송
         url = "http://58.239.10.48:8501/detect"  # Flask 서버 URL
-        response = requests.post(url, json={"video_path": video_path})
+        with open(video_path, "rb") as f:
+            response = requests.post(url, files={"video": (uploaded_file.name, f, uploaded_file.type)})
         
         if response.status_code == 200:
             data = response.json()
             if data.get("detected"):
                 st.success("멧돼지가 감지되었습니다!")
-                st.write(data.get("data"))
+                st.write(data.get("message"))  # 감지된 데이터 표시
             else:
                 st.warning(data.get("message"))
         else:
