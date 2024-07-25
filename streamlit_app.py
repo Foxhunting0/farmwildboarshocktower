@@ -16,7 +16,7 @@ if st.button("멧돼지 감지 시작"):
             f.write(uploaded_file.getbuffer())
         
         # Flask 서버에 요청 보내기
-        url = "http://localhost:5050/detect"  # Flask 서버 URL
+        url = "http://192.168.0.75:5050/detect"  # Flask 서버 URL
         response = requests.post(url, json={"video_path": video_path})
         
         if response.status_code == 200:
