@@ -1,42 +1,45 @@
 import streamlit as st
 import requests
-import os
-import uuid
-import tempfile
 
-st.title("🎈 My new app")
-st.write("Let's start building! For help and inspiration, head over to [docs.streamlit.io](https://docs.streamlit.io)")
+st.title("🐗 Wild Boar Detection")
+st.write("This is Sparta!!!")
 
-# 동영상 파일 업로드
-uploaded_file = st.file_uploader("동영상 파일을 업로드하세요", type=["mp4", "avi", "mov"])
+# 동영상 파일 업로드 위젯
+uploaded_file = st.file_uploader("동영상을 업로드하세요:", type=["mp4", "avi", "mov"])
 
-if st.button("멧돼지 감지 시작"):
+# 전기 방벽 이미지 경로
+electric_fence_image_path = "C:/Users/KDP007/Desktop/e_w.jpg"
+
+if st.button("아무도 내게서 숨지 못해"):
     if uploaded_file is not None:
-        # 임시 파일로 저장 (고유한 이름 추가)
-        with tempfile.NamedTemporaryFile(delete=False, suffix=os.path.splitext(uploaded_file.name)[1]) as temp_file:
-            temp_file.write(uploaded_file.getbuffer())
-            video_path = temp_file.name
+        # Flask 서버의 URL을 설정합니다.
+        url = "http://192.168.0.75:8501/detect"  # Flask 서버의 URL
         
-        # Flask 서버에 파일 전송
-        url = "http://58.239.10.48:8501/detect"  # Flask 서버 URL
-        with open(video_path, "rb") as f:
-            with st.spinner("서버에 요청 중..."):
-                response = requests.post(url, files={"video": (uploaded_file.name, f, uploaded_file.type)})
-        
-        if response.status_code == 200:
-            data = response.json()
-            if data.get("detected"):
-                st.success("멧돼지가 감지되었습니다!")
-                st.write(data.get("message"))  # 감지된 데이터 표시
-            else:
-                st.warning(data.get("message"))
-        else:
-            st.error(f"서버 오류가 발생했습니다. 상태 코드: {response.status_code} - {response.text}")
-        
-        # 임시 비디오 파일 삭제 (오류 처리 추가)
-        try:
-            os.remove(video_path)
-        except Exception as e:
-            st.error(f"비디오 파일 삭제 중 오류 발생: {e}")
+        # 서버 요청을 보낼 때 로딩 스피너 표시
+        with st.spinner("서버에 요청 중..."):
+            try:
+                # Flask 서버에 파일 전송
+                response = requests.post(url, files={"video": (uploaded_file.name, uploaded_file.read(), uploaded_file.type)})
+                
+                # 응답 처리
+                if response.status_code == 200:
+                    data = response.json()
+                    if "detected" in data and data["detected"]:
+                        st.success("멧돼지가 감지되었습니다!")
+                        st.write(data["message"])  # 감지된 데이터 표시
+                        
+                        # 전기 방벽 이미지 표시
+                        st.image(electric_fence_image_path, caption="전기 방벽", use_column_width=True)
+
+                        # 감지된 이미지 표시 (서버에서 반환된 이미지 경로 사용)
+                        detected_image_path = data.get("image_path")
+                        if detected_image_path:
+                            st.image(detected_image_path, caption="감지된 이미지", use_column_width=True)
+                    else:
+                        st.warning(data["message"])
+                else:
+                    st.error(f"서버와의 통신 오류: {response.status_code} - {response.text}")
+            except requests.exceptions.RequestException as e:
+                st.error(f"서버 요청 중 오류 발생: {e}")
     else:
-        st.error("동영상 파일을 업로드해야 합니다.")
+        st.error("동영상을 업로드해주세요.")
