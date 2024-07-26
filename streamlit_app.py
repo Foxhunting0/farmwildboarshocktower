@@ -1,8 +1,9 @@
 import streamlit as st
 import requests
 
+# 애플리케이션 제목 및 설명
 st.title("🐗 Wild Boar Detection")
-st.write("This is Sparta!!!")
+st.write("이 애플리케이션은 야생 멧돼지를 감지하고 전기 방벽을 제어합니다.")
 
 # 동영상 파일 업로드 위젯
 uploaded_file = st.file_uploader("동영상을 업로드하세요:", type=["mp4", "avi", "mov"])
