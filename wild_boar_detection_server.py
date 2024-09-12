@@ -25,7 +25,7 @@ def detect_wild_boar(frame):
 
 def activate_electric_fence():
     global electric_fence_active
-    url = 'http://192.168.0.75:8502/detect'
+    url = 'http://192.168.0.101:8502/detect'
     payload = {'action': 'activate'}
     try:
         response = requests.post(url, json=payload)
@@ -39,7 +39,7 @@ def activate_electric_fence():
 
 def deactivate_electric_fence():
     global electric_fence_active
-    url = 'http://192.168.0.75:8502/detect'
+    url = 'http://192.168.0.101:8502/detect'
     payload = {'action': 'deactivate'}
     try:
         response = requests.post(url, json=payload)
