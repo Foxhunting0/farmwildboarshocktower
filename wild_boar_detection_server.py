@@ -4,13 +4,16 @@ import tempfile
 import os
 import requests
 from ultralytics import YOLO
+from PIL import Image
 
+# Initialize YOLO model
 pt = 'farm.pt'
 model = YOLO(pt)
 
-# 전기 방벽 모드 초기화
-automatic_mode = True  # 기본값을 자동 모드로 설정
-electric_fence_active = False  # 전기 방벽 상태 초기화
+# Electric fence mode and status
+automatic_mode = True  # Default to automatic mode
+electric_fence_active = False  # Initial electric fence status
+
 
 def detect_wild_boar(frame):
     results = model.predict(frame, conf=0.7)
@@ -30,11 +33,14 @@ def activate_electric_fence():
     try:
         response = requests.post(url, json=payload)
         if response.status_code == 200:
-            electric_fence_active = True  # 전기 방벽 활성화
+            electric_fence_active = True
+            st.success('전기 방벽이 작동되었습니다.')
             return True
         else:
+            st.error(f'전기 방벽 작동 실패: {response.status_code}, {response.text}')
             return False
     except Exception as e:
+        st.error(f'오류 발생: {e}')
         return False
 
 def deactivate_electric_fence():
@@ -44,75 +50,94 @@ def deactivate_electric_fence():
     try:
         response = requests.post(url, json=payload)
         if response.status_code == 200:
-            electric_fence_active = False  # 전기 방벽 비활성화
+            electric_fence_active = False
+            st.success('전기 방벽이 꺼졌습니다.')
             return True
         else:
+            st.error(f'전기 방벽 끄기 실패: {response.status_code}, {response.text}')
             return False
     except Exception as e:
+        st.error(f'오류 발생: {e}')
         return False
 
-st.title("멧돼지 감지 시스템")
-st.sidebar.header("설정")
+def process_video(file):
+    if not file.name.lower().endswith(('.mp4', '.avi', '.mov')):
+        st.error("지원하지 않는 비디오 형식입니다.")
+        return
 
-# 비디오 업로드
-uploaded_file = st.sidebar.file_uploader("비디오 파일 업로드", type=['mp4', 'avi', 'mov'])
-
-if uploaded_file is not None:
-    # 임시 파일 생성
     with tempfile.NamedTemporaryFile(delete=False, suffix='.mp4') as temp_file:
-        temp_file.write(uploaded_file.read())
+        temp_file.write(file.read())
         temp_file_path = temp_file.name
 
     cap = cv2.VideoCapture(temp_file_path)
 
-    # 비디오 파일 열기 확인
     if not cap.isOpened():
         st.error("비디오 파일을 열 수 없습니다.")
-    else:
-        frame_interval = 5
-        frame_count = 0
-        wild_boar_detected = False
-        image_path = "detected_boar_image.jpg"  # 감지된 이미지를 저장할 경로
+        return
 
+    frame_interval = 5
+    frame_count = 0
+    wild_boar_detected = False
+    detected_frame = None
+
+    try:
         while True:
             ret, frame = cap.read()
             if not ret:
                 break
-            
+
             frame_count += 1
-            
             if frame_count % frame_interval == 0:
                 frame_resized = cv2.resize(frame, (640, 640))
                 detected = detect_wild_boar(frame_resized)
                 if detected:
                     wild_boar_detected = True
-                    cv2.imwrite(image_path, frame_resized)  # 감지된 이미지를 저장
-                    st.image(image_path, caption="감지된 멧돼지", use_column_width=True)
-                    st.success("멧돼지가 감지되었습니다.")
+                    detected_frame = frame_resized
                     break
-
+    finally:
         cap.release()
         os.remove(temp_file_path)
 
-    if not wild_boar_detected:
-        st.warning("멧돼지가 감지되지 않았습니다.")
-
-# 전기 방벽 조작
-if st.sidebar.button("전기 방벽 작동"):
-    if activate_electric_fence():
-        st.success("전기 방벽이 작동되었습니다.")
+    if wild_boar_detected and detected_frame is not None:
+        st.success("멧돼지가 감지되었습니다.")
+        img = cv2.cvtColor(detected_frame, cv2.COLOR_BGR2RGB)
+        st.image(img, caption="Detected Wild Boar", use_column_width=True)
     else:
-        st.error("전기 방벽 작동 실패.")
+        st.info("멧돼지가 감지되지 않았습니다.")
 
-if st.sidebar.button("전기 방벽 끄기"):
-    if deactivate_electric_fence():
-        st.success("전기 방벽이 꺼졌습니다.")
+# Streamlit app layout
+st.title("Wild Boar Detection and Electric Fence Control")
+
+# Electric Fence Control
+st.header("Electric Fence Control")
+fence_status = "On" if electric_fence_active else "Off"
+st.write(f"전기 방벽 상태: **{fence_status}**")
+
+col1, col2 = st.columns(2)
+with col1:
+    if st.button("Activate Electric Fence"):
+        activate_electric_fence()
+with col2:
+    if st.button("Deactivate Electric Fence"):
+        deactivate_electric_fence()
+
+# Video Upload and Wild Boar Detection
+st.header("Wild Boar Detection")
+uploaded_video = st.file_uploader("비디오 업로드", type=["mp4", "avi", "mov"])
+
+if uploaded_video is not None:
+    st.write("비디오 파일을 처리 중입니다...")
+    process_video(uploaded_video)
+
+# Set mode
+st.header("Set Mode")
+mode = st.selectbox("모드를 선택하세요", ["automatic", "manual"])
+
+if st.button("Set Mode"):
+    if mode == "automatic":
+        automatic_mode = True
+        st.write("모드가 'automatic'으로 설정되었습니다.")
     else:
-        st.error("전기 방벽 끄기 실패.")
-
-# 현재 상태 표시
-st.sidebar.subheader("현재 상태")
-st.sidebar.write(f"전기 방벽 활성화: {electric_fence_active}")
-
-if __name__ == "__main__":
-    st.write("애플리케이션이 실행 중입니다.")
+        automatic_mode = False
+        deactivate_electric_fence()
+        st.write("모드가 'manual'로 설정되었습니다.")
