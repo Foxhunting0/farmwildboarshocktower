@@ -53,17 +53,17 @@ st.write(f"현재 모드: {st.session_state.mode}")
 
 # 전기 방벽 온오프 버튼
 def toggle_fence(state):
-    url = f"http://192.168.0.38:8501/fence/{state}"
+    url = f"http://192.168.0.101:8501/fence/{state}"
 
     try:
         response = requests.post(url)
         if response.status_code == 200:
             st.session_state.fence_state = (state == "on")
             if st.session_state.fence_state:
-                image_url = "http://192.168.0.38:8501/fence_image"
+                image_url = "http://192.168.0.101:8501/fence_image"
                 st.image(image_url, caption="하늘에서 정의가 빗발친다.", use_column_width=True)
                  # Show the fence video
-                video_url = "http://192.168.0.38:8501/fence_video"
+                video_url = "http://192.168.0.101:8501/fence_video"
                 st.video(video_url)
             else:
                 st.write("전기 방벽이 꺼져 있습니다.")
@@ -218,7 +218,7 @@ if st.session_state.mode == 'automatic_manual_approval' and uploaded_file is not
         # 동영상 재생
         st.video(uploaded_file)
         
-        url = "http://192.168.0.38:8501/detect"
+        url = "http://192.168.0.101:8501/detect"
        
         with st.spinner("서버에 요청 중..."):
             try:
@@ -230,7 +230,7 @@ if st.session_state.mode == 'automatic_manual_approval' and uploaded_file is not
                         st.write(data["message"])
                         detected_image_path = data.get("image_url")
                         if detected_image_path:
-                            detected_image_url = f"http://192.168.0.38:8501/{detected_image_path}"
+                            detected_image_url = f"http://192.168.0.101:8501/{detected_image_path}"
                             st.image(detected_image_url, caption="감지된 이미지", use_column_width=True)
 
                         # 위치 정보를 표시할 HTML 콘텐츠 로드
@@ -248,9 +248,9 @@ if st.session_state.mode == 'automatic_manual_approval' and uploaded_file is not
                 st.error(f"서버 요청 중 오류 발생: {e}")
 
     if st.session_state.fence_state:
-        image_url = "http://192.168.0.38:8501/fence_image"
+        image_url = "http://192.168.0.101:8501/fence_image"
         st.image(image_url, caption="하늘에서 정의가 빗발친다.", use_column_width=True)
-        video_url = "http://192.168.0.38:8501/fence_video"
+        video_url = "http://192.168.0.101:8501/fence_video"
         st.video(video_url)
 
 # 자동 모드 - 자동 승인
@@ -259,7 +259,7 @@ if st.session_state.mode == 'automatic_approval' and uploaded_file is not None:
         # 동영상 재생
         st.video(uploaded_file)
         
-        url = "http://192.168.0.38:8501/detect"
+        url = "http://192.168.0.101:8501/detect"
         
         with st.spinner("서버에 요청 중..."):
             try:
@@ -271,7 +271,7 @@ if st.session_state.mode == 'automatic_approval' and uploaded_file is not None:
                         st.write(data["message"])
                         detected_image_path = data.get("image_url")
                         if detected_image_path:
-                            detected_image_url = f"http://192.168.0.38:8501/{detected_image_path}"
+                            detected_image_url = f"http://192.168.0.101:8501/{detected_image_path}"
                             st.image(detected_image_url, caption="감지된 이미지", use_column_width=True)
                         
                         # 전기 방벽 켜기
